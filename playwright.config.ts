@@ -1,17 +1,15 @@
-import { PlaywrightTestConfig, devices } from '@playwright/test';
-import path from 'path';
+import { defineConfig, devices } from '@playwright/test';
 
-const config: PlaywrightTestConfig = {
-  timeout: 30 * 1000,
-  testDir: path.join(__dirname, 'src/tests'),
-  retries: process.env.CI ? 2 : 0,
-  outputDir: 'test-results/',
+export default defineConfig({
+  testDir: './src/tests',
+  timeout: 30000,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
-    ['html', { outputFolder: 'reports/html-report' }],
-    ['json', { outputFile: 'reports/json-report/test-results.json' }],
+    ['html', { outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results/json-results.json' }],
     ['allure-playwright', { outputFolder: 'allure-results' }]
   ],
   use: {
@@ -34,6 +32,4 @@ const config: PlaywrightTestConfig = {
       use: { ...devices['Desktop Safari'] },
     },
   ],
-};
-
-export default config;
+});
