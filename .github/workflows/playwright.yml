@@ -4,6 +4,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
   test:
     timeout-minutes: 60
@@ -19,7 +20,10 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
-      run: npx playwright test --reporter=line,allure-playwright
+      run: npx playwright test --reporter=html,allure-playwright
+    - name: Create directories if they don't exist
+      run: |
+        mkdir -p playwright-report test-results screenshots allure-results allure-report
     - name: Upload Playwright HTML Report
       if: always()
       uses: actions/upload-artifact@v4
@@ -27,6 +31,15 @@ jobs:
         name: playwright-html-report
         path: playwright-report/
         retention-days: 7
+        if-no-files-found: ignore  # This is the key fix!
+    - name: Upload Allure Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results
+        path: allure-results/
+        retention-days: 7
+        if-no-files-found: ignore
     - name: Generate Allure Report
       if: always()
       run: |
@@ -39,6 +52,7 @@ jobs:
         name: allure-report
         path: allure-report/
         retention-days: 7
+        if-no-files-found: ignore
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -46,6 +60,7 @@ jobs:
         name: test-results
         path: test-results/
         retention-days: 7
+        if-no-files-found: ignore
     - name: Upload Screenshots
       if: always()
       uses: actions/upload-artifact@v4
@@ -53,3 +68,4 @@ jobs:
         name: screenshots
         path: screenshots/
         retention-days: 7
+        if-no-files-found: ignore
