@@ -5,67 +5,104 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+  pages: write      # needed for GitHub Pages
+  id-token: write   # needed for deployment
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'npm'
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test --reporter=html,allure-playwright
-    - name: Create directories if they don't exist
-      run: |
-        mkdir -p playwright-report test-results screenshots allure-results allure-report
-    - name: Upload Playwright HTML Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: playwright-html-report
-        path: playwright-report/
-        retention-days: 7
-        if-no-files-found: ignore  # This is the key fix!
-    - name: Upload Allure Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: allure-results
-        path: allure-results/
-        retention-days: 7
-        if-no-files-found: ignore
-    - name: Generate Allure Report
-      if: always()
-      run: |
-        npm install -g allure-commandline
-        allure generate ./allure-results --clean -o ./allure-report
-    - name: Upload Allure Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: allure-report
-        path: allure-report/
-        retention-days: 7
-        if-no-files-found: ignore
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: test-results/
-        retention-days: 7
-        if-no-files-found: ignore
-    - name: Upload Screenshots
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: screenshots
-        path: screenshots/
-        retention-days: 7
-        if-no-files-found: ignore
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      # --- Upload Reports & Results ---
+      - name: Upload Playwright HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload JSON Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: json-results
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          npm install -g allure-commandline
+          allure generate ./allure-results --clean -o ./allure-report
+
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload Screenshots & Videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-artifacts
+          path: |
+            test-results/
+            **/*.png
+            **/*.webm
+            **/*.mp4
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # --- Deploy to GitHub Pages ---
+      - name: Setup Pages
+        if: always()
+        uses: actions/configure-pages@v4
+
+      - name: Upload report for GitHub Pages
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Choose which report you want to publish by default
+          path: playwright-report/
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4
