@@ -100,7 +100,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Choose which report you want to publish by default
-          path: playwright-report/
+          path: allure-report/
 
       - name: Deploy to GitHub Pages
         if: always()
